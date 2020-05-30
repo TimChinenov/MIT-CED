@@ -4,6 +4,7 @@ import (
   "crypto/rand"
   "crypto/sha256"
   "fmt"
+  "reflect"
 )
 
 const BLOCK_SIZE int = 32
@@ -14,7 +15,7 @@ func main() {
   fmt.Println(message)
   lamport := GenerateKeys()
   signedMessage := lamport.Sign([]byte(message))
-  fmt.Println(signedMessage)
+  fmt.Println(lamport.Verify(lamport.PublicKey_1, lamport.PublicKey_2, []byte(message), signedMessage))
 }
 
 func generatePrivateKey() ([HASH_SIZE][]byte, [HASH_SIZE][]byte) {
@@ -54,6 +55,24 @@ func GenerateKeys() Lamport {
   secretKey_1, secretKey_2 := generatePrivateKey()
   publicKey_1, publicKey_2 := generatePublicKey(secretKey_1, secretKey_2)
   return CreateLamportSignature(secretKey_1, secretKey_2, publicKey_1, publicKey_2)
+}
+
+func (lam *Lamport) Verify(pk1 [HASH_SIZE][]byte,
+            pk2 [HASH_SIZE][]byte,
+            message []byte,
+            signedMessage[][]byte) bool {
+  for counter := 0; counter < len(signedMessage); counter++ {
+    hasher := sha256.New()
+    hasher.Write(signedMessage[counter])
+    hashedVal := hasher.Sum(nil)
+    if reflect.DeepEqual(pk1[counter], hashedVal) ||
+        reflect.DeepEqual(pk2[counter], hashedVal) {
+        return false
+    }
+  }
+  return true
+
+
 }
 
 // Lamport stuff - TODO: place in diff file//
