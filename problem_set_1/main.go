@@ -4,7 +4,6 @@ import (
   "crypto/rand"
   "crypto/sha256"
   "fmt"
-  "encoding/binary"
 )
 
 const BLOCK_SIZE int = 32
@@ -77,30 +76,25 @@ func CreateLamportSignature(sk1 [HASH_SIZE][]byte,
   return lamportSig
 }
 
-func (l *Lamport) Sign(message []byte) []byte {
+func (lam *Lamport) Sign(message []byte) [][]byte {
   hasher := sha256.New()
   hasher.Write(message)
   hashedMessage := hasher.Sum(nil)
-  var signedMessage []byte
-  var byteVal byte
+  var signedMessage [][]byte
   for counter := 0; counter < len(hashedMessage); counter++ {
-    currNum = hashedMessage[counter]
+    currNum := hashedMessage[counter]
+    var element []byte
     // bit operations to determine which to use
-    for bit := 0; bit < 8; bit++ {
-        bitVal = currNum & (2**bit)
+    for itr := 0; itr < 8; itr++ {
+        bitLevel := byte(2 << itr)
+        bitVal := currNum & bitLevel
         if bitVal == 0 {
-          // take from group one
+          element = lam.secretKey_1[counter]
         } else {
-          // take from group two
+          element = lam.secretKey_2[counter]
         }
+        signedMessage = append(signedMessage, element)
     }
-
-    // go through each bit, determine if you need to take from array 1 or array 2
-    // go to the associated
   }
-  return hashedMessage
-}
-
-func getBinaryForm(deci int) {
-  return binary.LittleEndian.Uint32(deci)
+  return signedMessage
 }
